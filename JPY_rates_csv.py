@@ -18,10 +18,14 @@ import os
 import sched, time
 s = sched.scheduler(time.time, time.sleep)
 def mycrawler_safe():
-    try:
-        mycrawler()
-    except:
-        pass
+    attempts = 0
+    while attempts < 3:
+        try:
+            mycrawler()
+            break
+        except:
+            attempts += 1
+            time.sleep(1)
     
 def mycrawler():
     data_save_path = 'D:/00.自動化資料庫'
@@ -50,6 +54,7 @@ def mycrawler():
             currency_table[row].append(td.text.replace('\n', ''))
     currency_table.append(['報價時間', mytime])
     
+    #currency talbe data check
     if sum(len(row) for row in currency_table) < 100:
         print(currency_table)
         s.enter(60, 1, mycrawler_safe)
@@ -85,7 +90,7 @@ def mycrawler():
         mywriter = csv.writer(csvfile)
         mywriter.writerows(mycurrency2)
         csvfile.close()
-    print('stp')
+    
     #############################################################################################################
     # 即時匯率
     #############################################################################################################
