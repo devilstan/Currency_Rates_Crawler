@@ -18,14 +18,16 @@ import os
 import sched, time
 s = sched.scheduler(time.time, time.sleep)
 def mycrawler_safe():
-    attempts = 0
-    while attempts < 3:
-        try:
-            mycrawler()
-            break
-        except:
-            attempts += 1
-            time.sleep(1)
+    mycrawler()
+    #attempts = 0
+    #while attempts < 3:
+    #    try:
+    #        mycrawler()
+    #        break
+    #    except Exception as e:
+    #        attempts += 1
+    #        print(e)
+    #        time.sleep(2)
     
 def mycrawler():
     data_save_path = 'D:/00.自動化資料庫'
@@ -43,7 +45,11 @@ def mycrawler():
     followed_row = []
     
     #mysh.range('A11').value = '更新時間：' + soup.findAll(id='layout_0_maincontent_0_ph_tabcontent_0_LbQuoteTime')[0].text
-    mytime = soup.findAll('span', id='LbQuoteTime')[0].text.replace('年', '/').replace('月', '/').replace('日', '')
+    try:
+        mytime = soup.findAll('span', id='LbQuoteTime')[0].text.replace('年', '/').replace('月', '/').replace('日', '')
+    except:
+        s.enter(60, 1, mycrawler_safe)
+        return
     followed_row.append(datetime.datetime.strptime(mytime, '%Y/%m/%d %H:%M:%S').time())
     for tb in soup.find_all('table', id='inteTable1'):
         row = 0
@@ -67,13 +73,30 @@ def mycrawler():
     
     if os.path.isfile(data_save_path + '/currency_rates.csv'):
         file = open(data_save_path + '/currency_rates.csv', 'r')
-        file.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                file.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
     else:
         with open(data_save_path + '/currency_rates.csv', 'w+', newline='') as csvfile:
             mywriter = csv.writer(csvfile)
             table_title = [['2', '美元(USD)', '', '日圓(JPY)', '', '歐元(EUR)', '', '英鎊(GBP)', ''],
                            ['時間', '買匯', '賣匯','買匯', '賣匯','買匯', '賣匯','買匯', '賣匯']]
             mywriter.writerows(table_title)
+            attempts_now = 0
+            while attempts_now < 3:
+                try:
+                    csvfile.close()
+                    break
+                except Exception as e:
+                    attempts_now += 1
+                    print(e)
+                    time.sleep(2)
 
     
     #############################################################################################################
@@ -84,12 +107,28 @@ def mycrawler():
         mycurrency2 = list(csvdata)
         mycurrency2.append(followed_row)
         mycurrency2[0][0] = str(int(mycurrency2[0][0]) + 1)
-        csvfile.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
 
     with open(data_save_path + '/currency_rates.csv', 'w', newline='') as csvfile:
         mywriter = csv.writer(csvfile)
         mywriter.writerows(mycurrency2)
-        csvfile.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
     
     #############################################################################################################
     # 即時匯率
@@ -97,7 +136,15 @@ def mycrawler():
     with open(data_save_path + '/currency_rates_now.csv', 'w', newline='') as csvfile:
         mywriter = csv.writer(csvfile)
         mywriter.writerows(currency_table)
-        #csvfile.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
 
     #############################################################################################################
     # 即時損益分析
@@ -117,12 +164,28 @@ def mycrawler():
         balance_tbl[0][1] = round( sum_NTD/sum_JPY, 4 )
         balance_tbl[0][3] = round( (sum_JPY * ( float(currency_table[4][3]) )) - sum_NTD, 1 )
         print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 平均匯率: ' + str(balance_tbl[0][1]) + ', 台幣損益: ' + str(balance_tbl[0][3]) )
-        csvfile.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
 
     with open( data_save_path + '/currency_balance.csv', 'w', newline='' ) as csvfile:
         mywriter = csv.writer( csvfile )
         mywriter.writerows( balance_tbl )
-        csvfile.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
     
     now = datetime.datetime.now()
     today10pm = now.replace(hour=23, minute=0, second=0, microsecond=0)
