@@ -34,11 +34,16 @@ def mycrawler():
     #urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     #url = 'https://www.esunbank.com.tw/bank/iframe/widget/rate/foreign-exchange-rate'
     url = 'https://www.esunbank.com.tw/bank/personal/deposit/rate/forex/foreign-exchange-rates'
-    response = requests.get(url,verify=True)
-    if response.status_code != 200:
-        s.enter(60, 1, mycrawler_safe)
-        print(response)
-        return
+    attempts = 0
+    while attempts < 3:
+        try:
+            response = requests.get(url,verify=True)
+            break
+        except Exception as e:
+            attempts += 1
+            print(e)
+            time.sleep(1)
+
     soup = BeautifulSoup(response.text, 'html.parser')
     follow_list = ['美元(USD)', '日圓(JPY)', '歐元(EUR)', '英鎊(GBP)']
     currency_table = [['幣別', '即期買入', '即期賣出', '優惠買入', '優惠賣出', '現金買入', '現金賣出']]
