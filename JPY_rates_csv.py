@@ -18,32 +18,43 @@ import os
 import sched, time
 s = sched.scheduler(time.time, time.sleep)
 def mycrawler_safe():
-    attempts = 0
-    while attempts < 3:
-        try:
-            mycrawler()
-            break
-        except:
-            attempts += 1
-            time.sleep(1)
+    mycrawler()
+    #attempts = 0
+    #while attempts < 3:
+    #    try:
+    #        mycrawler()
+    #        break
+    #    except Exception as e:
+    #        attempts += 1
+    #        print(e)
+    #        time.sleep(2)
     
 def mycrawler():
     data_save_path = 'D:/00.自動化資料庫'
     #urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     #url = 'https://www.esunbank.com.tw/bank/iframe/widget/rate/foreign-exchange-rate'
     url = 'https://www.esunbank.com.tw/bank/personal/deposit/rate/forex/foreign-exchange-rates'
-    response = requests.get(url,verify=True)
-    if response.status_code != 200:
-        s.enter(60, 1, mycrawler_safe)
-        print(response)
-        return
+    attempts = 0
+    while attempts < 3:
+        try:
+            response = requests.get(url,verify=True)
+            break
+        except Exception as e:
+            attempts += 1
+            print(e)
+            time.sleep(1)
+
     soup = BeautifulSoup(response.text, 'html.parser')
     follow_list = ['美元(USD)', '日圓(JPY)', '歐元(EUR)', '英鎊(GBP)']
     currency_table = [['幣別', '即期買入', '即期賣出', '優惠買入', '優惠賣出', '現金買入', '現金賣出']]
     followed_row = []
     
     #mysh.range('A11').value = '更新時間：' + soup.findAll(id='layout_0_maincontent_0_ph_tabcontent_0_LbQuoteTime')[0].text
-    mytime = soup.findAll('span', id='LbQuoteTime')[0].text.replace('年', '/').replace('月', '/').replace('日', '')
+    try:
+        mytime = soup.findAll('span', id='LbQuoteTime')[0].text.replace('年', '/').replace('月', '/').replace('日', '')
+    except:
+        s.enter(60, 1, mycrawler_safe)
+        return
     followed_row.append(datetime.datetime.strptime(mytime, '%Y/%m/%d %H:%M:%S').time())
     for tb in soup.find_all('table', id='inteTable1'):
         row = 0
@@ -67,13 +78,30 @@ def mycrawler():
     
     if os.path.isfile(data_save_path + '/currency_rates.csv'):
         file = open(data_save_path + '/currency_rates.csv', 'r')
-        file.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                file.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
     else:
         with open(data_save_path + '/currency_rates.csv', 'w+', newline='') as csvfile:
             mywriter = csv.writer(csvfile)
             table_title = [['2', '美元(USD)', '', '日圓(JPY)', '', '歐元(EUR)', '', '英鎊(GBP)', ''],
                            ['時間', '買匯', '賣匯','買匯', '賣匯','買匯', '賣匯','買匯', '賣匯']]
             mywriter.writerows(table_title)
+            attempts_now = 0
+            while attempts_now < 3:
+                try:
+                    csvfile.close()
+                    break
+                except Exception as e:
+                    attempts_now += 1
+                    print(e)
+                    time.sleep(2)
 
     
     #############################################################################################################
@@ -84,12 +112,28 @@ def mycrawler():
         mycurrency2 = list(csvdata)
         mycurrency2.append(followed_row)
         mycurrency2[0][0] = str(int(mycurrency2[0][0]) + 1)
-        csvfile.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
 
     with open(data_save_path + '/currency_rates.csv', 'w', newline='') as csvfile:
         mywriter = csv.writer(csvfile)
         mywriter.writerows(mycurrency2)
-        csvfile.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
     
     #############################################################################################################
     # 即時匯率
@@ -97,14 +141,36 @@ def mycrawler():
     with open(data_save_path + '/currency_rates_now.csv', 'w', newline='') as csvfile:
         mywriter = csv.writer(csvfile)
         mywriter.writerows(currency_table)
-        #csvfile.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
 
     #############################################################################################################
     # 即時損益分析
     #############################################################################################################
+    invested_found = []
+    
     with open(data_save_path + '/currency_balance.csv', 'r', newline='') as csvfile:
         csvdata = csv.reader( csvfile, delimiter=',' )
-        balance_tbl = list( csvdata )
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                balance_tbl = list( csvdata )
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+                if attempts_now == 3:
+                    s.enter(60, 1, mycrawler_safe)
+                    return
+                    
         sum_NTD = 0
         sum_JPY = 0
         for i in range( 2,len( balance_tbl ) ):
@@ -116,13 +182,147 @@ def mycrawler():
                 balance_tbl[i][3] = round( int( balance_tbl[i][1]) / int(balance_tbl[i][2] ), 4 )
         balance_tbl[0][1] = round( sum_NTD/sum_JPY, 4 )
         balance_tbl[0][3] = round( (sum_JPY * ( float(currency_table[4][3]) )) - sum_NTD, 1 )
-        print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 平均匯率: ' + str(balance_tbl[0][1]) + ', 台幣損益: ' + str(balance_tbl[0][3]) )
-        csvfile.close()
-
+        #print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 平均匯率: ' + str(balance_tbl[0][1]) + ', 台幣損益: ' + str(balance_tbl[0][3]) )
+        invested_local = []
+        invested_local.append(str(balance_tbl[0][1]) + '(JPY)')
+        invested_local.append(balance_tbl[0][3])
+        invested_found.append(invested_local)
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+                
     with open( data_save_path + '/currency_balance.csv', 'w', newline='' ) as csvfile:
         mywriter = csv.writer( csvfile )
         mywriter.writerows( balance_tbl )
-        csvfile.close()
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+                
+    with open(data_save_path + '/currency_balance(GBP).csv', 'r', newline='') as csvfile:
+        csvdata = csv.reader( csvfile, delimiter=',' )
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                balance_tbl = list( csvdata )
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+                if attempts_now == 3:
+                    s.enter(60, 1, mycrawler_safe)
+                    return
+                    
+        sum_NTD = 0
+        sum_GBP = 0
+        for i in range( 2,len( balance_tbl ) ):
+            sum_NTD = sum_NTD + float( balance_tbl[i][1] )
+            sum_GBP = sum_GBP + float( balance_tbl[i][2] )
+            if len( balance_tbl[i] ) < 4:
+                balance_tbl[i].append( round( float( balance_tbl[i][1]) / float(balance_tbl[i][2] ), 4 ) )
+            else:
+                balance_tbl[i][3] = round( float( balance_tbl[i][1]) / float(balance_tbl[i][2] ), 4 )
+        balance_tbl[0][1] = round( sum_NTD/sum_GBP, 4 )
+        balance_tbl[0][3] = round( (sum_GBP * ( float(currency_table[8][3]) )) - sum_NTD, 1 )
+        #print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 平均匯率: ' + str(balance_tbl[0][1]) + ', 台幣損益: ' + str(balance_tbl[0][3]) )
+        invested_local = []
+        invested_local.append(str(balance_tbl[0][1]) + '(GBP)')
+        invested_local.append(balance_tbl[0][3])
+        invested_found.append(invested_local)
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+
+    with open( data_save_path + '/currency_balance(GBP).csv', 'w', newline='' ) as csvfile:
+        mywriter = csv.writer( csvfile )
+        mywriter.writerows( balance_tbl )
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+    
+    with open(data_save_path + '/currency_balance(EUR).csv', 'r', newline='') as csvfile:
+        csvdata = csv.reader( csvfile, delimiter=',' )
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                balance_tbl = list( csvdata )
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+                if attempts_now == 3:
+                    s.enter(60, 1, mycrawler_safe)
+                    return
+                    
+        sum_NTD = 0
+        sum_EUR = 0
+        for i in range( 2,len( balance_tbl ) ):
+            sum_NTD = sum_NTD + float( balance_tbl[i][1] )
+            sum_EUR = sum_EUR + float( balance_tbl[i][2] )
+            if len( balance_tbl[i] ) < 4:
+                balance_tbl[i].append( round( float( balance_tbl[i][1]) / float(balance_tbl[i][2] ), 4 ) )
+            else:
+                balance_tbl[i][3] = round( float( balance_tbl[i][1]) / float(balance_tbl[i][2] ), 4 )
+        balance_tbl[0][1] = round( sum_NTD/sum_EUR, 4 )
+        balance_tbl[0][3] = round( (sum_EUR * ( float(currency_table[5][3]) )) - sum_NTD, 1 )
+        #print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 平均匯率: ' + str(balance_tbl[0][1]) + ', 台幣損益: ' + str(balance_tbl[0][3]) )
+        invested_local = []
+        invested_local.append(str(balance_tbl[0][1]) + '(EUR)')
+        invested_local.append(balance_tbl[0][3])
+        invested_found.append(invested_local)
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+
+    with open( data_save_path + '/currency_balance(EUR).csv', 'w', newline='' ) as csvfile:
+        mywriter = csv.writer( csvfile )
+        mywriter.writerows( balance_tbl )
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                csvfile.close()
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+                
+    #############################################################################################################
+    # 即時損益顯示
+    #############################################################################################################
+    #print(invested_found)
+    print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 平均匯率: ' + str([row[0] for row in invested_found]) + ', 台幣損益: ' + str(int(sum([row[1] for row in invested_found]))) )
     
     now = datetime.datetime.now()
     today10pm = now.replace(hour=23, minute=0, second=0, microsecond=0)
