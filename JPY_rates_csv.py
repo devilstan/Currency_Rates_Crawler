@@ -165,7 +165,18 @@ def mycrawler():
     #############################################################################################################
     with open(data_save_path + '/currency_rates.csv', 'r', newline='') as csvfile:
         csvdata = csv.reader(csvfile, delimiter=',')
-        mycurrency2 = list(csvdata)
+        attempts_now = 0
+        while attempts_now < 3:
+            try:
+                mycurrency2 = list(csvdata)
+                break
+            except Exception as e:
+                attempts_now += 1
+                print(e)
+                time.sleep(2)
+                if attempts_now == 3:
+                    s.enter(60, 1, mycrawler_safe)
+                    return
         mycurrency2.append(followed_row)
         mycurrency2[0][0] = str(int(mycurrency2[0][0]) + 1)
         attempts_now = 0
