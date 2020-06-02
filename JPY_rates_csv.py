@@ -48,15 +48,21 @@ def BalanceCalc(currency_sym, current_rate, invested_found, filename):
                     
         sum_NTD = 0
         sum_Foreign = 0
-        for i in range( 2,len( balance_tbl ) ):
-            sum_NTD = sum_NTD + float( balance_tbl[i][1] )
-            sum_Foreign = sum_Foreign + float( balance_tbl[i][2] )
-            if len( balance_tbl[i] ) < 4:
-                balance_tbl[i].append( round( float( balance_tbl[i][1]) / float(balance_tbl[i][2] ), 4 ) )
-            else:
-                balance_tbl[i][3] = round( float( balance_tbl[i][1]) / float(balance_tbl[i][2] ), 4 )
-        balance_tbl[0][1] = round( sum_NTD/sum_Foreign, 4 )
-        balance_tbl[0][3] = round( (sum_Foreign * ( float(current_rate) )) - sum_NTD, 1 )
+        
+        #print(sum(len(row) for row in balance_tbl))
+        if sum(len(row) for row in balance_tbl) <= 8:
+            balance_tbl[0][1] = 0;
+            balance_tbl[0][3] = 0;
+        else:
+            for i in range( 2,len( balance_tbl ) ):
+                sum_NTD = sum_NTD + float( balance_tbl[i][1] )
+                sum_Foreign = sum_Foreign + float( balance_tbl[i][2] )
+                if len( balance_tbl[i] ) < 4:
+                    balance_tbl[i].append( round( float( balance_tbl[i][1]) / float(balance_tbl[i][2] ), 4 ) )
+                else:
+                    balance_tbl[i][3] = round( float( balance_tbl[i][1]) / float(balance_tbl[i][2] ), 4 )
+            balance_tbl[0][1] = round( sum_NTD/sum_Foreign, 4 )
+            balance_tbl[0][3] = round( (sum_Foreign * ( float(current_rate) )) - sum_NTD, 1 )
         #print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 平均匯率: ' + str(balance_tbl[0][1]) + ', 台幣損益: ' + str(balance_tbl[0][3]) )
         invested_local = []
         invested_local.append(str(balance_tbl[0][1]) + '(' + currency_sym + ')')
