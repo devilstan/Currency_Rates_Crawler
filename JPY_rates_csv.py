@@ -65,7 +65,8 @@ def BalanceCalc(currency_sym, current_rate, invested_found, filename):
             balance_tbl[0][3] = round( (sum_Foreign * ( float(current_rate) )) - sum_NTD, 1 )
         #print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 平均匯率: ' + str(balance_tbl[0][1]) + ', 台幣損益: ' + str(balance_tbl[0][3]) )
         invested_local = []
-        invested_local.append(str(balance_tbl[0][1]) + '(' + currency_sym + ')')
+        #invested_local.append(str(balance_tbl[0][1]) + '(' + currency_sym + ')')
+        invested_local.append(str(balance_tbl[0][3]) + '(' + str(round((balance_tbl[0][3] / (1 if sum_NTD == 0 else sum_NTD))*100, 1)) + '%)' + '(' + currency_sym + ')')
         invested_local.append(balance_tbl[0][3])
         invested_found.append(invested_local)
         attempts_now = 0
@@ -237,7 +238,7 @@ def mycrawler():
     # 即時損益顯示
     #############################################################################################################
     #print(invested_found)
-    print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 平均匯率: ' + str([row[0] for row in invested_found]) + ', 台幣損益: ' + str(int(sum([row[1] for row in invested_found]))) )
+    print( str(datetime.datetime.now().strftime('%H:%M:%S')) + ', 幣別損益: ' + str([row[0] for row in invested_found]) + ', 台幣總損益: ' + str(int(sum([row[1] for row in invested_found]))) )
     
     now = datetime.datetime.now()
     today10pm = now.replace(hour=23, minute=0, second=0, microsecond=0)
